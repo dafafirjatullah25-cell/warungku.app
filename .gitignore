@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment files (JANGAN diupload — berisi password & secret key)
+.env
+**/.env
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Upload files (gambar produk — terlalu besar untuk GitHub)
+backend/uploads/products/*.jpg
+backend/uploads/products/*.jpeg
+backend/uploads/products/*.png
+backend/uploads/products/*.webp
