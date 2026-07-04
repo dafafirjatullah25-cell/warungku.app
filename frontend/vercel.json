@@ -9,7 +9,7 @@
       "destination": "https://warungkuapp-production.up.railway.app/uploads/:path*"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api|uploads).*)",
       "destination": "/index.html"
     }
   ]
