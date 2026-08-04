@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 // Load models with associations
@@ -10,6 +12,27 @@ const { startArchiveJob } = require('./utils/archiveOrders');
 const { startDebtCleanupJob } = require('./utils/cleanupDebts');
 
 const app = express();
+
+// Security headers
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' } // supaya gambar bisa diakses frontend
+}));
+
+// Rate limiter global — max 100 request per 15 menit per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { message: 'Terlalu banyak request, coba lagi nanti' }
+});
+
+// Rate limiter ketat untuk login/register — max 10 percobaan per 15 menit
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: 'Terlalu banyak percobaan login, coba lagi dalam 15 menit' }
+});
+
+app.use(globalLimiter);
 
 // Middleware
 app.use(cors({
@@ -30,7 +53,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/customers', require('./routes/customers'));
