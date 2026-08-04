@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Search, Trash2, KeyRound, X, User, Phone, Mail, MapPin, Calendar, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/axios';
+import { imgUrl } from '../../utils/imgUrl';
 
 const inputCls = 'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 const selectCls = 'text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
@@ -111,8 +112,11 @@ export default function CustomersPage() {
             {filteredCustomers.map(c => (
               <div key={c.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-4 flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
-                    <User size={18} className="text-blue-600" />
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {c.avatar
+                      ? <img src={imgUrl(c.avatar)} alt={c.name} className="w-full h-full object-cover" />
+                      : <User size={18} className="text-emerald-600" />
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-800 dark:text-gray-100 truncate">{c.name}</p>
@@ -153,8 +157,11 @@ export default function CustomersPage() {
             </div>
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-                  <User size={24} className="text-blue-600" />
+                <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden">
+                  {profileModal.avatar
+                    ? <img src={imgUrl(profileModal.avatar)} alt={profileModal.name} className="w-full h-full object-cover" />
+                    : <User size={24} className="text-emerald-600" />
+                  }
                 </div>
                 <div>
                   <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{profileModal.name}</p>

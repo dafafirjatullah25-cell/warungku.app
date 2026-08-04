@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { User, Save, X, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { User, Save, X, Trash2, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import { imgUrl } from '../../utils/imgUrl';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -15,6 +16,8 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', address: '' });
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     api.get(`/customers/profile/${user.id}`)
@@ -45,8 +48,28 @@ export default function ProfilePage() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Ukuran foto maksimal 5MB'); return; }
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+    setUploadingAvatar(true);
+    try {
+      const { data } = await api.post('/customers/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setProfile(prev => ({ ...prev, avatar: data.avatar }));
+      toast.success('Foto profil berhasil diubah!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Gagal upload foto');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {    setDeleting(true);
     try {
       await api.delete('/customers/account');
       toast.success('Akun berhasil dihapus. Sampai jumpa! 👋');
@@ -73,12 +96,38 @@ export default function ProfilePage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         {/* Avatar */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
-            <User size={28} className="text-blue-600" />
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden">
+              {profile?.avatar ? (
+                <img src={imgUrl(profile.avatar)} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User size={28} className="text-emerald-600" />
+              )}
+            </div>
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors disabled:opacity-50"
+              title="Ganti foto profil"
+            >
+              {uploadingAvatar ? (
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera size={12} />
+              )}
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
           <div>
             <p className="font-semibold text-gray-800 dark:text-gray-100 text-lg">{profile?.name}</p>
             <p className="text-gray-400 text-sm">{profile?.email}</p>
+            <p className="text-xs text-emerald-500 mt-0.5">Ketuk ikon kamera untuk ganti foto</p>
           </div>
         </div>
 

@@ -59,7 +59,7 @@ router.post('/register', [
 
     // Kalau email sudah ada tapi belum verifikasi → update OTP saja
     if (existingEmail && !existingEmail.isVerified) {
-      await existingEmail.update({ otp, otpExpiry, password, name: name.trim(), phone, address });
+      await existingEmail.update({ otpCode: otp, otpExpiry, password, name: name.trim(), phone, address });
       await sendOTP(email, name.trim(), otp);
       return res.status(200).json({
         message: 'Kode OTP baru telah dikirim ke email Anda',
@@ -116,6 +116,7 @@ router.post('/verify-otp', [
     }
 
     if (user.otpCode !== otp) {
+      console.log(`[OTP Debug] email: ${email}, db otpCode: "${user.otpCode}", input otp: "${otp}"`);
       return res.status(400).json({ message: 'Kode OTP salah' });
     }
 

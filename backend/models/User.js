@@ -51,6 +51,10 @@ const User = sequelize.define('User', {
   activeTokens: {
     type: DataTypes.JSONB,
     defaultValue: []
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,

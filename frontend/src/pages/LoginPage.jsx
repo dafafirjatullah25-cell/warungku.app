@@ -1,12 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { Download } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Cek apakah sudah diinstall sebagai PWA
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    const handler = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+      setIsInstalled(true);
+      toast.success('Warungku berhasil diinstall!');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,6 +109,20 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+
+        {/* Tombol Install PWA */}
+        {!isInstalled && installPrompt && (
+          <div className="mt-4">
+            <button
+              onClick={handleInstall}
+              className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 py-3 rounded-2xl font-semibold shadow-sm hover:shadow-md hover:bg-emerald-50 dark:hover:bg-gray-700 transition-all text-sm"
+            >
+              <Download size={16} />
+              Install Aplikasi Warungku
+            </button>
+            <p className="text-center text-xs text-gray-400 mt-2">Buka seperti aplikasi tanpa browser</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,65 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kasir-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kasir_app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kasir_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kasir-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: kasir_app
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      FRONTEND_URL: http://117.54.109.186:3000
+      JWT_SECRET: dev_secret_key
+      JWT_EXPIRE: 7d
+      EMAIL_USER: dafafirjatullah25@gmail.com
+      EMAIL_PASS: qsyxgafqnoevleye
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/uploads:/usr/src/app/uploads
+    command: sh -c "npm run migrate && npm start"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: final
+    container_name: kasir-frontend
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    
+
+volumes:
+  postgres_data:

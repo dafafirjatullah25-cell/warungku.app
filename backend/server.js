@@ -18,7 +18,8 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'https://warungku-app-two.vercel.app',
-    /\.vercel\.app$/
+    /\.vercel\.app$/,
+    /\.trycloudflare\.com$/
   ],
   credentials: true
 }));

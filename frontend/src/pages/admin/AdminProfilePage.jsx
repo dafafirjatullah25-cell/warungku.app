@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   KeyRound, Eye, EyeOff, Save, Users, Plus, Trash2, X,
-  ShieldCheck, Pencil, Check
+  ShieldCheck, Pencil, Check, Camera
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+import { imgUrl } from '../../utils/imgUrl';
 
 const inputCls = 'w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 placeholder-gray-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
@@ -103,6 +104,9 @@ export default function AdminProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [adminAvatar, setAdminAvatar] = useState(user?.avatar || null);
+  const avatarInputRef = useRef(null);
 
   // Ganti password
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -128,6 +132,28 @@ export default function AdminProfilePage() {
   };
 
   useEffect(() => { fetchAdmins(); }, []);
+
+  // ── Upload Avatar ──
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error('Ukuran foto maksimal 5MB'); return; }
+    const formData = new FormData();
+    formData.append('avatar', file);
+    setUploadingAvatar(true);
+    try {
+      const { data } = await api.post('/admin/profile/avatar', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setAdminAvatar(data.avatar);
+      if (updateUser) updateUser({ avatar: data.avatar });
+      toast.success('Foto profil berhasil diubah!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Gagal upload foto');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   // ── Edit nama ──
   const startEditName = () => {
@@ -206,8 +232,33 @@ export default function AdminProfilePage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header info */}
         <div className="flex items-center gap-4 p-5 border-b border-gray-100 dark:border-gray-700">
-          <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl">⚡</span>
+          <div className="relative flex-shrink-0">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center overflow-hidden">
+              {adminAvatar ? (
+                <img src={imgUrl(adminAvatar)} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl">⚡</span>
+              )}
+            </div>
+            <button
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors disabled:opacity-50"
+              title="Ganti foto profil"
+            >
+              {uploadingAvatar ? (
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera size={12} />
+              )}
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
           </div>
           <div className="flex-1 min-w-0">
             {/* Nama — mode edit / tampil */}
@@ -394,10 +445,13 @@ export default function AdminProfilePage() {
                       <td className="px-5 py-3.5 text-gray-400">{idx + 1}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${admin.email === SUPERADMIN_EMAIL ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-blue-100 dark:bg-blue-900/40'}`}>
-                            <span className={`text-sm font-bold ${admin.email === SUPERADMIN_EMAIL ? 'text-yellow-600 dark:text-yellow-400' : 'text-blue-600 dark:text-blue-400'}`}>
-                              {admin.name.charAt(0).toUpperCase()}
-                            </span>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden ${admin.email === SUPERADMIN_EMAIL ? 'bg-yellow-100 dark:bg-yellow-900/40' : 'bg-emerald-100 dark:bg-emerald-900/40'}`}>
+                            {admin.avatar
+                              ? <img src={imgUrl(admin.avatar)} alt={admin.name} className="w-full h-full object-cover" />
+                              : <span className={`text-sm font-bold ${admin.email === SUPERADMIN_EMAIL ? 'text-yellow-600 dark:text-yellow-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                  {admin.name.charAt(0).toUpperCase()}
+                                </span>
+                            }
                           </div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-gray-800 dark:text-gray-100">{admin.name}</span>

@@ -3,6 +3,9 @@ const router = express.Router();
 const { User, Product, Order, OrderItem, Payment, Expense, DebtPayment } = require('../models');
 const { verifyToken, isAdmin } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const upload = require('../utils/upload');
+const path = require('path');
+const fs = require('fs');
 
 // All admin routes require authentication + admin role
 router.use(verifyToken, isAdmin);
@@ -680,6 +683,29 @@ router.delete('/expenses/:id', async (req, res) => {
     if (!expense) return res.status(404).json({ message: 'Pengeluaran tidak ditemukan' });
     await expense.destroy();
     res.json({ message: 'Pengeluaran dihapus' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ─── Admin: Upload Avatar ──────────────────────────────────────────
+router.post('/profile/avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'File tidak ditemukan' });
+
+    const admin = await User.findByPk(req.user.id);
+    if (!admin) return res.status(404).json({ message: 'Admin tidak ditemukan' });
+
+    // Hapus avatar lama jika ada
+    if (admin.avatar) {
+      const oldPath = path.join(__dirname, '..', admin.avatar);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const avatarPath = `/uploads/products/${req.file.filename}`;
+    await admin.update({ avatar: avatarPath });
+
+    res.json({ message: 'Foto profil berhasil diupload', avatar: avatarPath });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

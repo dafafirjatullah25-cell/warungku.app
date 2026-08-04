@@ -23,3 +23,12 @@ backend/uploads/products/*.jpg
 backend/uploads/products/*.jpeg
 backend/uploads/products/*.png
 backend/uploads/products/*.webp
+
+# Docker
+docker-compose.override.yml
+
+# Cloudflare tunnel config
+.cloudflared/
+
+# Package lock (opsional, uncomment kalau mau exclude)
+# package-lock.json

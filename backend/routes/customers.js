@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const { verifyToken } = require('../middleware/auth');
+const upload = require('../utils/upload');
+const path = require('path');
+const fs = require('fs');
 
 // Get customer profile
 router.get('/profile/:customerId', verifyToken, async (req, res) => {
@@ -99,6 +102,31 @@ router.put('/profile/:customerId', verifyToken, async (req, res) => {
         address: customer.address
       }
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+module.exports = router;
+
+// Upload avatar customer
+router.post('/avatar', verifyToken, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'File tidak ditemukan' });
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+
+    // Hapus avatar lama jika ada
+    if (user.avatar) {
+      const oldPath = path.join(__dirname, '..', user.avatar);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const avatarPath = `/uploads/products/${req.file.filename}`;
+    await user.update({ avatar: avatarPath });
+
+    res.json({ message: 'Foto profil berhasil diupload', avatar: avatarPath });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
